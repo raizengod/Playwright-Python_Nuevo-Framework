@@ -41,6 +41,9 @@ jobs:
       - name: Instalar navegadores de Playwright
         run: playwright install --with-deps
 
+      - name: Crear directorio de ambiente
+        run: mkdir -p src/environments
+
       - name: Crear archivo de ambiente para el CI
         env:
           # Define la variable de ambiente 'ENVIRONMENT'
