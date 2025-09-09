@@ -46,42 +46,30 @@ jobs:
 
       - name: Crear archivo de ambiente para el CI
         env:
-          # Define la variable de ambiente 'ENVIRONMENT'
           ENVIRONMENT: ${{ github.event.inputs.environment || 'qa' }}
         run: |
-          # Usa una declaración 'case' para seleccionar el secreto correcto
-          # en base al ambiente.
           case ${{ env.ENVIRONMENT }} in
             dev)
-              echo "BASE_URL=${{ secrets.DEV_ENV_VARS }}" > src/environments/dev.env
+              echo "${{ secrets.DEV_ENV_VARS }}" > src/environments/dev.env
               ;;
             staging)
-              echo "BASE_URL=${{ secrets.STAGING_ENV_VARS }}" > src/environments/staging.env
+              echo "${{ secrets.STAGING_ENV_VARS }}" > src/environments/staging.env
               ;;
             prod)
-              echo "BASE_URL=${{ secrets.PROD_ENV_VARS }}" > src/environments/prod.env
+              echo "${{ secrets.PROD_ENV_VARS }}" > src/environments/prod.env
               ;;
             *)
-              # Caso por defecto, si no se especifica nada
-              echo "BASE_URL=${{ secrets.QA_ENV_VARS }}" > src/environments/qa.env
+              echo "${{ secrets.QA_ENV_VARS }}" > src/environments/qa.env
               ;;
           esac
 
       - name: Ejecutar pruebas de Playwright
         env:
-          # Define la variable de entorno 'ENVIRONMENT' usando el input del workflow.
-          # Esta variable será utilizada por tu script Python (config.py)
-          # para cargar la configuración correcta.
-          # Si el evento es manual (workflow_dispatch), usa el input del usuario.
-          # Si el evento es un 'push' o 'pull_request', usa 'qa' por defecto.
           ENVIRONMENT: ${{ github.event.inputs.environment || 'qa' }}
-          # Puedes agregar aquí variables de entorno que no sean secretos
-          # si son necesarias para el CI.
         run: |
-          # El comando de pytest ahora se ejecuta en el ambiente seleccionado.
           pytest src/test/test_home.py::test_ingresar_a_home -n 4
           
-      - name: Subir informe de pruebas de Playwright (para debugging o descarga)
+      - name: Subir informe de pruebas de Playwright
         uses: actions/upload-artifact@v4
         if: always()
         with:
