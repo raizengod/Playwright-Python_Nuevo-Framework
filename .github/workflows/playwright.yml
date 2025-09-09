@@ -67,7 +67,7 @@ jobs:
         env:
           ENVIRONMENT: ${{ github.event.inputs.environment || 'qa' }}
         run: |
-          pytest src/test/test_home.py src/test/test_registro.py src/test/test_login.py -n 4
+          pytest src/test/test_home.py src/test/test_registro.py src/test/test_login.py -n 5
           
       - name: Subir informe de pruebas de Playwright
         uses: actions/upload-artifact@v4
