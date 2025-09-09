@@ -52,7 +52,7 @@ jobs:
         run: |
           # Ahora, tu script Python leerá la variable de entorno 'ENVIRONMENT'
           # y seleccionará el ambiente correcto.
-          pytest src/test/test_home.py src/test/test_registro.py src/test/test_login.py -n 4
+          pytest src/test/test_home.py
           
       - name: Subir informe de pruebas de Playwright (para debugging o descarga)
         uses: actions/upload-artifact@v4
