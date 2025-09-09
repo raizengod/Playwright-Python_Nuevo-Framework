@@ -10,4 +10,4 @@ __pycache__
 traceview_*
 playwright_reporte*
 *.log
-environments
+*.env
