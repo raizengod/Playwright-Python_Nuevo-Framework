@@ -114,22 +114,24 @@ Asegurar Directorios de Evidencias: El archivo config.py define una función ens
 ## 🚀 Uso
 Para ejecutar el suite de pruebas para un entorno específico (por ejemplo, QA), utiliza la variable de entorno ENVIRONMENT o el argumento --env-file.
 
-1.  * **Usando la variable de entorno**
+1.  **Usando la variable de entorno**
     (Recomendado para CI/CD y automatización)
 
     ```bash
     # En Windows
-    set ENVIRONMENT=qa && pytest --workers 4
-    
+    set ENVIRONMENT=qa && pytest -n 4
+    ```
+
+    ```bash
     # En macOS/Linux
-    ENVIRONMENT=qa pytest --workers 4
+    ENVIRONMENT=qa pytest -n 4
     ```
 
 2.  **Usando el argumento --env-file**
     (Útil para ejecuciones manuales y debugging)
 
     ```bash
-    pytest --workers 4 --env-file=tests/environments/qa.env
+    pytest -n 4 --env-file=tests/environments/qa.env
     ```
 3.  **Ejecuta prueba de módulo especifico**
     ```bash
