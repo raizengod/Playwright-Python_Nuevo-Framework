@@ -67,12 +67,12 @@ jobs:
         env:
           ENVIRONMENT: ${{ github.event.inputs.environment || 'qa' }}
         run: |
-          pytest src/test/test_home.py::test_ingresar_a_home -n 4
+          pytest src/test/test_home.py src/test/test_registro.py src/test/test_login.py -n 4
           
       - name: Subir informe de pruebas de Playwright
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-raw-report
-          path: reportes/html1/playwright_reporte.html
+          path: reports/html1/playwright_reporte.html
           retention-days: 2
