@@ -1,4 +1,5 @@
 from playwright.sync_api import Page
+import re
 
 class LoginLocatorsPage:
     
@@ -8,4 +9,6 @@ class LoginLocatorsPage:
     #Selector label apellido
     @property
     def labelDatoLoginInvalido(self):
-        return self.page.get_by_text("Invalid username/password")
+        # Usamos una expresión regular para que la búsqueda sea insensible a mayúsculas y minúsculas.
+        # Esto asegura que el localizador encuentre el elemento sin importar la capitalización.
+        return self.page.get_by_text(re.compile("Invalid", re.IGNORECASE))

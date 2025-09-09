@@ -356,7 +356,7 @@ def test_login_exitoso_data_json(set_up_Home: BasePage) -> None:
         base_page.element.rellenar_campo_de_texto(base_page.home.campoPassword, usuario_a_probar["password"], "rellenar_campoPassword_exitoso", config.SCREENSHOT_DIR)
         
         # Hace clic en el botón de login.
-        base_page.element.hacer_clic_en_elemento(base_page.home.botonLogin, "Clic_botonLogin_exitoso", config.SCREENSHOT_DIR)
+        base_page.element.hacer_clic_en_elemento(base_page.home.botonLogin, "Clic_botonLogin_exitoso", config.SCREENSHOT_DIR, "Login")
         
         # Valida el saludo personalizado
         base_page.element.verificar_texto_contenido(base_page.dashboard.labelSaludo, f"Hi, {usuario_a_probar["first_name"]}", "Verificar_saludo_personalizado", config.SCREENSHOT_DIR)
@@ -409,7 +409,10 @@ def test_login_exitoso_data_csv(set_up_Home: BasePage) -> None:
         base_page.element.rellenar_campo_de_texto(base_page.home.campoPassword, password, "rellenar_campoPassword_exitoso_csv", config.SCREENSHOT_DIR)
         
         # Hace clic en el botón de login.
-        base_page.element.hacer_clic_en_elemento(base_page.home.botonLogin, "Clic_botonLogin_exitoso_csv", config.SCREENSHOT_DIR)
+        base_page.element.hacer_clic_en_elemento(base_page.home.botonLogin, "Clic_botonLogin_exitoso", config.SCREENSHOT_DIR, "Login", 4)
+        
+        # Valida que el mensaje de datos de login inválidos no sea visible.
+        base_page.element.validar_elemento_no_visible(base_page.login.labelDatoLoginInvalido, "No_visualizar_mensaje_data_invalida", config.SCREENSHOT_DIR)
         
         # Valida el saludo personalizado
         base_page.element.verificar_texto_contenido(base_page.dashboard.labelSaludo, f"Hi, {first_name}", "Verificar_saludo_personalizado_csv", config.SCREENSHOT_DIR)
@@ -467,7 +470,10 @@ def test_login_exitoso_data_excel(set_up_Home: BasePage) -> None:
         base_page.element.rellenar_campo_de_texto(base_page.home.campoPassword, usuario_a_probar["password"], "rellenar_campoPassword_exitoso_excel", config.SCREENSHOT_DIR)
         
         # Hace clic en el botón de login.
-        base_page.element.hacer_clic_en_elemento(base_page.home.botonLogin, "Clic_botonLogin_exitoso_excel", config.SCREENSHOT_DIR)
+        base_page.element.hacer_clic_en_elemento(base_page.home.botonLogin, "Clic_botonLogin_exitoso", config.SCREENSHOT_DIR, "Login", 4)
+        
+        # Valida que el mensaje de datos de login inválidos no sea visible.
+        base_page.element.validar_elemento_no_visible(base_page.login.labelDatoLoginInvalido, "No_visualizar_mensaje_data_invalida", config.SCREENSHOT_DIR)
         
         # Valida el saludo personalizado
         base_page.element.verificar_texto_contenido(base_page.dashboard.labelSaludo, f"Hi, {usuario_a_probar["first_name"]}", "Verificar_saludo_personalizado_excel", config.SCREENSHOT_DIR)
