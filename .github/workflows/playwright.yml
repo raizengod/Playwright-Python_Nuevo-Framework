@@ -41,6 +41,29 @@ jobs:
       - name: Instalar navegadores de Playwright
         run: playwright install --with-deps
 
+      - name: Crear archivo de ambiente para el CI
+        env:
+          # Define la variable de ambiente 'ENVIRONMENT'
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'qa' }}
+        run: |
+          # Usa una declaración 'case' para seleccionar el secreto correcto
+          # en base al ambiente.
+          case ${{ env.ENVIRONMENT }} in
+            dev)
+              echo "BASE_URL=${{ secrets.DEV_BASE_URL }}" > src/environments/dev.env
+              ;;
+            staging)
+              echo "BASE_URL=${{ secrets.STAGING_BASE_URL }}" > src/environments/staging.env
+              ;;
+            prod)
+              echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" > src/environments/prod.env
+              ;;
+            *)
+              # Caso por defecto, si no se especifica nada
+              echo "BASE_URL=${{ secrets.QA_BASE_URL }}" > src/environments/qa.env
+              ;;
+          esac
+
       - name: Ejecutar pruebas de Playwright
         env:
           # Define la variable de entorno 'ENVIRONMENT' usando el input del workflow.
@@ -61,3 +84,4 @@ jobs:
         with:
           name: playwright-raw-report
           path: reportes/html1/playwright_reporte.html
+          retention-days: 2
