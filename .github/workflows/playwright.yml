@@ -10,7 +10,17 @@ on:
       - main
       - master
   workflow_dispatch: # Permite ejecutar el workflow manualmente
-    
+    inputs:
+      environment:
+        description: 'Selecciona el ambiente de ejecución (e.g., dev, staging)'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+        - qa
 jobs:
   test:
     timeout-minutes: 60
