@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13.7' # Asegúrate de que esta sea la versión de Python que usas
+          python-version: '3.13.7'
       
       - name: Instalar dependencias de Python
         run: |
@@ -50,9 +50,8 @@ jobs:
           # Puedes agregar aquí variables de entorno que no sean secretos
           # si son necesarias para el CI.
         run: |
-          # Ahora, tu script Python leerá la variable de entorno 'ENVIRONMENT'
-          # y seleccionará el ambiente correcto.
-          pytest src/test/test_home.py::test_ingresar_a_home
+          # El comando de pytest ahora se ejecuta en el ambiente seleccionado.
+          pytest src/test/test_home.py src/test/test_registro.py src/test/test_login.py -n 4
           
       - name: Subir informe de pruebas de Playwright (para debugging o descarga)
         uses: actions/upload-artifact@v4
