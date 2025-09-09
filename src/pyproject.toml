@@ -1,0 +1,2 @@
+[tool.pytest.ini_options]
+addopts = "-s -v --template=html1/index.html --report=reports/html1/playwright_reporte.html"

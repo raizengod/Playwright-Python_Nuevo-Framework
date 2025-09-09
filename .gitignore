@@ -1,0 +1,13 @@
+__pycache__
+*.png
+*.jpg
+*.mp4
+*.gif
+*.png
+*.jpeg
+*.webm
+.pytest_cache
+traceview_*
+playwright_reporte*
+*.log
+*.env
