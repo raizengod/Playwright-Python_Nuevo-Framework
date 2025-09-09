@@ -46,7 +46,9 @@ jobs:
           # Define la variable de entorno 'ENVIRONMENT' usando el input del workflow.
           # Esta variable será utilizada por tu script Python (config.py)
           # para cargar la configuración correcta.
-          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          # Si el evento es manual (workflow_dispatch), usa el input del usuario.
+          # Si el evento es un 'push' o 'pull_request', usa 'qa' por defecto.
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'qa' }}
           # Puedes agregar aquí variables de entorno que no sean secretos
           # si son necesarias para el CI.
         run: |
