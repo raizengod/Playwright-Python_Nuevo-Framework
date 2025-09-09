@@ -50,17 +50,17 @@ jobs:
           # en base al ambiente.
           case ${{ env.ENVIRONMENT }} in
             dev)
-              echo "BASE_URL=${{ secrets.DEV_BASE_URL }}" > src/environments/dev.env
+              echo "BASE_URL=${{ secrets.DEV_ENV_VARS }}" > src/environments/dev.env
               ;;
             staging)
-              echo "BASE_URL=${{ secrets.STAGING_BASE_URL }}" > src/environments/staging.env
+              echo "BASE_URL=${{ secrets.STAGING_ENV_VARS }}" > src/environments/staging.env
               ;;
             prod)
-              echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" > src/environments/prod.env
+              echo "BASE_URL=${{ secrets.PROD_ENV_VARS }}" > src/environments/prod.env
               ;;
             *)
               # Caso por defecto, si no se especifica nada
-              echo "BASE_URL=${{ secrets.QA_BASE_URL }}" > src/environments/qa.env
+              echo "BASE_URL=${{ secrets.QA_ENV_VARS }}" > src/environments/qa.env
               ;;
           esac
 
