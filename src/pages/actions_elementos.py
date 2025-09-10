@@ -2280,6 +2280,149 @@ class ElementActions:
             self.logger.critical(mensaje_error, exc_info=True)
             self.base.tomar_captura(f"{nombre_base}_fallo_inesperado_extraccion_valor", directorio)
             raise AssertionError(f"\nError inesperado al extraer valor: {selector}") from e
+        
+    def obtener_valor_elemento_disabled(self, selector: Union[str, Locator], nombre_base: str, directorio: str, 
+                                 tiempo_max_espera_visibilidad: Union[int, float] = 5.0, nombre_paso: str = "") -> Optional[str]:
+        """
+        Extrae y retorna el valor textual (contenido o atributo 'value') de un elemento de la página.
+        La función intenta obtener el valor de diferentes maneras:
+        1.  Usa `locator.input_value()` para elementos de formulario como `<input>`, `<textarea>` o `<select>`.
+        2.  Si `input_value()` no es aplicable o falla, intenta `locator.inner_text()` para obtener el texto
+            visible renderizado dentro del elemento.
+        3.  Si `inner_text()` no es apropiado (ej., texto oculto), intenta `locator.text_content()` para todo el texto.
+        
+        Playwright espera implícitamente que el elemento sea visible antes de intentar la extracción,
+        lo cual es configurado por 'tiempo_max_espera_visibilidad'.
+
+        Args:
+            selector (Union[str, Locator]): El selector del elemento (CSS, XPath, texto, etc.).
+                                            Puede ser un string o un objeto Locator de Playwright ya existente.
+            nombre_base (str): Nombre base para las capturas de pantalla, asegurando un nombre único.
+            directorio (str): Directorio donde se guardarán las capturas de pantalla. El directorio
+                              se creará si no existe.
+            tiempo_max_espera_visibilidad (Union[int, float], opcional): Tiempo máximo en segundos que Playwright
+                                                                        esperará a que el elemento sea visible
+                                                                        antes de intentar extraer su valor.
+                                                                        Por defecto es 5.0 segundos.
+            nombre_paso (str, opcional): Una descripción del paso que se está ejecutando para el registro (logs).
+                                         Por defecto es una cadena vacía "".
+
+        Returns:
+            Optional[str]: El valor extraído del elemento como string, o None si no se pudo extraer ningún valor.
+
+        Raises:
+            AssertionError: Si el elemento no se vuelve visible dentro del tiempo de espera.
+            Error: Para otros errores específicos de Playwright durante la interacción.
+            Exception: Para cualquier otro error inesperado.
+        """
+        self.logger.info(f"\n--- {nombre_paso}: Extrayendo valor del elemento con selector: '{selector}'. ---")
+
+        # --- Medición de rendimiento: Inicio de la operación total de la función ---
+        start_time_total_operation = time.time()
+        
+        locator: Locator = None # Inicializamos el locator
+        valor_extraido: Optional[str] = None # Para almacenar el valor extraído
+
+        try:
+            # --- Medición de rendimiento: Tiempo de localización del elemento y espera de visibilidad ---
+            start_time_locator = time.time()
+            if isinstance(selector, str):
+                locator = self.page.locator(selector)
+            else: # Asume que si no es str, ya es un Locator
+                locator = selector
+            
+            # Esperar a que el elemento sea visible antes de intentar extraer su valor
+            expect(locator).to_be_visible()
+            end_time_locator = time.time()
+            duration_locator = end_time_locator - start_time_locator
+            self.logger.info(f"PERFORMANCE: Tiempo de localización y espera de visibilidad para '{selector}': {duration_locator:.4f} segundos.")
+            
+            # Resaltar el elemento (útil para la depuración visual)
+            # locator.highlight() 
+
+            # Tomar captura de pantalla antes de la extracción
+            self.base.tomar_captura(f"{nombre_base}_antes_extraccion_valor", directorio)
+            self.logger.info(f"\n📸 Captura de pantalla tomada antes de la extracción de valor: '{nombre_base}_antes_extraccion_valor.png'")
+
+            # --- Medición de rendimiento: Tiempo de extracción del valor ---
+            start_time_extraction = time.time()
+            # Priorizamos input_value() para campos de formulario (incluyendo <select>, <input>, <textarea>)
+            # input_value() extrae el valor del atributo 'value' o el contenido de <textarea>.
+            try:
+                valor_extraido = locator.input_value()
+                self.logger.debug(f"\nValor extraído (input_value) de '{selector}': '{valor_extraido}'")
+            except Error as e: # Captura si no es un elemento de entrada o si falla la operación
+                self.logger.debug(f"\ninput_value no aplicable o falló para '{selector}' (Detalles: {e.message if hasattr(e, 'message') else str(e)}). Intentando text_content/inner_text.")
+                
+                # Si falla input_value, intentamos con inner_text o text_content para otros elementos
+                # inner_text() es a menudo preferible ya que devuelve el texto visible y renderizado.
+                try:
+                    valor_extraido = locator.inner_text()
+                    self.logger.debug(f"\nValor extraído (inner_text) de '{selector}': '{valor_extraido}'")
+                except Error as e_inner:
+                    self.logger.debug(f"\ninner_text falló para '{selector}' (Detalles: {e_inner.message if hasattr(e_inner, 'message') else str(e_inner)}). Intentando text_content.")
+                    try:
+                        valor_extraido = locator.text_content()
+                        self.logger.debug(f"\nValor extraído (text_content) de '{selector}': '{valor_extraido}'")
+                    except Error as e_text:
+                        self.logger.warning(f"\nNo se pudo extraer input_value, inner_text ni text_content de '{selector}' (Detalles: {e_text.message if hasattr(e_text, 'message') else str(e_text)}).")
+                        valor_extraido = None # Asegurarse de que sea None si todo falla
+
+            end_time_extraction = time.time()
+            duration_extraction = end_time_extraction - start_time_extraction
+            self.logger.info(f"PERFORMANCE: Tiempo de extracción del valor para '{selector}': {duration_extraction:.4f} segundos.")
+
+            if valor_extraido is not None:
+                # Stripping whitespace for cleaner results if it's a string
+                valor_final = valor_extraido.strip() if isinstance(valor_extraido, str) else valor_extraido
+                self.logger.info(f"\n✅ Valor final obtenido del elemento '{selector}': '{valor_final}'")
+                self.base.tomar_captura(f"{nombre_base}_valor_extraido_exito", directorio)
+                return valor_final
+            else:
+                self.logger.warning(f"\n❌ No se pudo extraer ningún valor significativo del elemento '{selector}'.")
+                self.base.tomar_captura(f"{nombre_base}_fallo_extraccion_valor_no_encontrado", directorio)
+                return None
+
+        except TimeoutError as e:
+            mensaje_error = (
+                f"\n❌ FALLO (Timeout): El elemento '{selector}' "
+                f"no se volvió visible a tiempo ({tiempo_max_espera_visibilidad}s) para extraer su valor. Detalles: {e}"
+            )
+            self.logger.error(mensaje_error, exc_info=True)
+            self.base.tomar_captura(f"{nombre_base}_fallo_timeout_extraccion_valor", directorio)
+            # Elevar una excepción clara para que el flujo de la prueba se detenga si el elemento no está disponible
+            raise AssertionError(f"\nElemento no disponible para extracción de valor: {selector}. Error: {e.message if hasattr(e, 'message') else str(e)}") from e
+
+        except Error as e: # Captura errores específicos de Playwright (directamente 'Error' sin alias)
+            mensaje_error = (
+                f"\n❌ FALLO (Error de Playwright): Ocurrió un error de Playwright al intentar extraer el valor de '{selector}'. "
+                f"Detalles: {e}"
+            )
+            self.logger.error(mensaje_error, exc_info=True)
+            self.base.tomar_captura(f"{nombre_base}_fallo_playwright_error_extraccion_valor", directorio)
+            raise AssertionError(f"\nError de Playwright al extraer valor: {selector}. Error: {e.message if hasattr(e, 'message') else str(e)}") from e
+
+        except Exception as e: # Captura cualquier otro error inesperado
+            mensaje_error = (
+                f"\n❌ FALLO (Error Inesperado): Ocurrió un error desconocido al intentar extraer el valor de '{selector}'. "
+                f"Detalles: {e}"
+            )
+            self.logger.critical(mensaje_error, exc_info=True)
+            self.base.tomar_captura(f"{nombre_base}_fallo_inesperado_extraccion_valor", directorio)
+            raise AssertionError(f"\nError inesperado al extraer valor: {selector}. Error: {e}") from e
+
+        finally:
+            # --- Medición de rendimiento: Fin de la operación total de la función ---
+            end_time_total_operation = time.time()
+            duration_total_operation = end_time_total_operation - start_time_total_operation
+            self.logger.info(f"PERFORMANCE: Tiempo total de la operación (obtener_valor_de_elemento): {duration_total_operation:.4f} segundos.")
+            
+            # El parámetro 'tiempo' original en tu función no tenía un uso claro aquí,
+            # ya que las operaciones de extracción tienen sus propios timeouts o son sincrónicas.
+            # Lo he renombrado a 'tiempo_max_espera_visibilidad' y se usa en expect().to_be_visible().
+            # No se añade una espera fija aquí por defecto. Si se necesita una pausa
+            # adicional después de la extracción, se debería añadir un nuevo parámetro.
+            pass
                 
     def realizar_drag_and_drop(self, elemento_origen: Locator, elemento_destino: Locator, nombre_base: str, directorio: str, nombre_paso: str = "", tiempo_espera_manual: float = 0.5, timeout_ms: int = 15000) -> None:
         """
@@ -3328,149 +3471,6 @@ class ElementActions:
             pass # No hay una espera fija aquí por defecto, ya que el timeout de expect() maneja la espera.
                  # Si 'tiempo' original era para una pausa, el parámetro ha sido absorbido por el timeout de expect.
                  # Si se desea una pausa *adicional* al final, se debería añadir un nuevo parámetro.
-
-    def obtener_valor_de_elemento(self, selector: Union[str, Locator], nombre_base: str, directorio: str, 
-                                 tiempo_max_espera_visibilidad: Union[int, float] = 5.0, nombre_paso: str = "") -> Optional[str]:
-        """
-        Extrae y retorna el valor textual (contenido o atributo 'value') de un elemento de la página.
-        La función intenta obtener el valor de diferentes maneras:
-        1.  Usa `locator.input_value()` para elementos de formulario como `<input>`, `<textarea>` o `<select>`.
-        2.  Si `input_value()` no es aplicable o falla, intenta `locator.inner_text()` para obtener el texto
-            visible renderizado dentro del elemento.
-        3.  Si `inner_text()` no es apropiado (ej., texto oculto), intenta `locator.text_content()` para todo el texto.
-        
-        Playwright espera implícitamente que el elemento sea visible antes de intentar la extracción,
-        lo cual es configurado por 'tiempo_max_espera_visibilidad'.
-
-        Args:
-            selector (Union[str, Locator]): El selector del elemento (CSS, XPath, texto, etc.).
-                                            Puede ser un string o un objeto Locator de Playwright ya existente.
-            nombre_base (str): Nombre base para las capturas de pantalla, asegurando un nombre único.
-            directorio (str): Directorio donde se guardarán las capturas de pantalla. El directorio
-                              se creará si no existe.
-            tiempo_max_espera_visibilidad (Union[int, float], opcional): Tiempo máximo en segundos que Playwright
-                                                                        esperará a que el elemento sea visible
-                                                                        antes de intentar extraer su valor.
-                                                                        Por defecto es 5.0 segundos.
-            nombre_paso (str, opcional): Una descripción del paso que se está ejecutando para el registro (logs).
-                                         Por defecto es una cadena vacía "".
-
-        Returns:
-            Optional[str]: El valor extraído del elemento como string, o None si no se pudo extraer ningún valor.
-
-        Raises:
-            AssertionError: Si el elemento no se vuelve visible dentro del tiempo de espera.
-            Error: Para otros errores específicos de Playwright durante la interacción.
-            Exception: Para cualquier otro error inesperado.
-        """
-        self.logger.info(f"\n--- {nombre_paso}: Extrayendo valor del elemento con selector: '{selector}'. ---")
-
-        # --- Medición de rendimiento: Inicio de la operación total de la función ---
-        start_time_total_operation = time.time()
-        
-        locator: Locator = None # Inicializamos el locator
-        valor_extraido: Optional[str] = None # Para almacenar el valor extraído
-
-        try:
-            # --- Medición de rendimiento: Tiempo de localización del elemento y espera de visibilidad ---
-            start_time_locator = time.time()
-            if isinstance(selector, str):
-                locator = self.page.locator(selector)
-            else: # Asume que si no es str, ya es un Locator
-                locator = selector
-            
-            # Esperar a que el elemento sea visible antes de intentar extraer su valor
-            expect(locator).to_be_visible()
-            end_time_locator = time.time()
-            duration_locator = end_time_locator - start_time_locator
-            self.logger.info(f"PERFORMANCE: Tiempo de localización y espera de visibilidad para '{selector}': {duration_locator:.4f} segundos.")
-            
-            # Resaltar el elemento (útil para la depuración visual)
-            # locator.highlight() 
-
-            # Tomar captura de pantalla antes de la extracción
-            self.base.tomar_captura(f"{nombre_base}_antes_extraccion_valor", directorio)
-            self.logger.info(f"\n📸 Captura de pantalla tomada antes de la extracción de valor: '{nombre_base}_antes_extraccion_valor.png'")
-
-            # --- Medición de rendimiento: Tiempo de extracción del valor ---
-            start_time_extraction = time.time()
-            # Priorizamos input_value() para campos de formulario (incluyendo <select>, <input>, <textarea>)
-            # input_value() extrae el valor del atributo 'value' o el contenido de <textarea>.
-            try:
-                valor_extraido = locator.input_value()
-                self.logger.debug(f"\nValor extraído (input_value) de '{selector}': '{valor_extraido}'")
-            except Error as e: # Captura si no es un elemento de entrada o si falla la operación
-                self.logger.debug(f"\ninput_value no aplicable o falló para '{selector}' (Detalles: {e.message if hasattr(e, 'message') else str(e)}). Intentando text_content/inner_text.")
-                
-                # Si falla input_value, intentamos con inner_text o text_content para otros elementos
-                # inner_text() es a menudo preferible ya que devuelve el texto visible y renderizado.
-                try:
-                    valor_extraido = locator.inner_text()
-                    self.logger.debug(f"\nValor extraído (inner_text) de '{selector}': '{valor_extraido}'")
-                except Error as e_inner:
-                    self.logger.debug(f"\ninner_text falló para '{selector}' (Detalles: {e_inner.message if hasattr(e_inner, 'message') else str(e_inner)}). Intentando text_content.")
-                    try:
-                        valor_extraido = locator.text_content()
-                        self.logger.debug(f"\nValor extraído (text_content) de '{selector}': '{valor_extraido}'")
-                    except Error as e_text:
-                        self.logger.warning(f"\nNo se pudo extraer input_value, inner_text ni text_content de '{selector}' (Detalles: {e_text.message if hasattr(e_text, 'message') else str(e_text)}).")
-                        valor_extraido = None # Asegurarse de que sea None si todo falla
-
-            end_time_extraction = time.time()
-            duration_extraction = end_time_extraction - start_time_extraction
-            self.logger.info(f"PERFORMANCE: Tiempo de extracción del valor para '{selector}': {duration_extraction:.4f} segundos.")
-
-            if valor_extraido is not None:
-                # Stripping whitespace for cleaner results if it's a string
-                valor_final = valor_extraido.strip() if isinstance(valor_extraido, str) else valor_extraido
-                self.logger.info(f"\n✅ Valor final obtenido del elemento '{selector}': '{valor_final}'")
-                self.base.tomar_captura(f"{nombre_base}_valor_extraido_exito", directorio)
-                return valor_final
-            else:
-                self.logger.warning(f"\n❌ No se pudo extraer ningún valor significativo del elemento '{selector}'.")
-                self.base.tomar_captura(f"{nombre_base}_fallo_extraccion_valor_no_encontrado", directorio)
-                return None
-
-        except TimeoutError as e:
-            mensaje_error = (
-                f"\n❌ FALLO (Timeout): El elemento '{selector}' "
-                f"no se volvió visible a tiempo ({tiempo_max_espera_visibilidad}s) para extraer su valor. Detalles: {e}"
-            )
-            self.logger.error(mensaje_error, exc_info=True)
-            self.base.tomar_captura(f"{nombre_base}_fallo_timeout_extraccion_valor", directorio)
-            # Elevar una excepción clara para que el flujo de la prueba se detenga si el elemento no está disponible
-            raise AssertionError(f"\nElemento no disponible para extracción de valor: {selector}. Error: {e.message if hasattr(e, 'message') else str(e)}") from e
-
-        except Error as e: # Captura errores específicos de Playwright (directamente 'Error' sin alias)
-            mensaje_error = (
-                f"\n❌ FALLO (Error de Playwright): Ocurrió un error de Playwright al intentar extraer el valor de '{selector}'. "
-                f"Detalles: {e}"
-            )
-            self.logger.error(mensaje_error, exc_info=True)
-            self.base.tomar_captura(f"{nombre_base}_fallo_playwright_error_extraccion_valor", directorio)
-            raise AssertionError(f"\nError de Playwright al extraer valor: {selector}. Error: {e.message if hasattr(e, 'message') else str(e)}") from e
-
-        except Exception as e: # Captura cualquier otro error inesperado
-            mensaje_error = (
-                f"\n❌ FALLO (Error Inesperado): Ocurrió un error desconocido al intentar extraer el valor de '{selector}'. "
-                f"Detalles: {e}"
-            )
-            self.logger.critical(mensaje_error, exc_info=True)
-            self.base.tomar_captura(f"{nombre_base}_fallo_inesperado_extraccion_valor", directorio)
-            raise AssertionError(f"\nError inesperado al extraer valor: {selector}. Error: {e}") from e
-
-        finally:
-            # --- Medición de rendimiento: Fin de la operación total de la función ---
-            end_time_total_operation = time.time()
-            duration_total_operation = end_time_total_operation - start_time_total_operation
-            self.logger.info(f"PERFORMANCE: Tiempo total de la operación (obtener_valor_de_elemento): {duration_total_operation:.4f} segundos.")
-            
-            # El parámetro 'tiempo' original en tu función no tenía un uso claro aquí,
-            # ya que las operaciones de extracción tienen sus propios timeouts o son sincrónicas.
-            # Lo he renombrado a 'tiempo_max_espera_visibilidad' y se usa en expect().to_be_visible().
-            # No se añade una espera fija aquí por defecto. Si se necesita una pausa
-            # adicional después de la extracción, se debería añadir un nuevo parámetro.
-            pass
         
     def manejar_obstaculos_en_pagina(self, obstaculos_locators: list, timeout: float = 5.0):
         """
