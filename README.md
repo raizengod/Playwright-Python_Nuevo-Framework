@@ -57,21 +57,21 @@ La estructura del proyecto está diseñada para ser clara, modular y fácil de m
 │   │   ├── config.py          # Gestión de configuraciones y entornos
 │   │   ├── generador_datos.py # Generación de datos de prueba aleatorios
 │   │   └── logger.py          # Sistema de logging centralizado
-│   ├── test/
-│   │   ├── archivos/               # Archivos de prueba (ej. para upload/download)
-│   │   │   ├── archivos_data_escritura/
-│   │   │   ├── archivos_data_fuente/
-│   │   │   ├── archivos_download/
-│   │   │   └── archivos_upload/
-│   │   ├── reportes/               # Directorio para almacenar evidencias de las pruebas
-│   │   │   ├── html/               # Informes HTML
-│   │   │   ├── video/              # Grabaciones de video de las ejecuciones
-│   │   │   ├── traceview/          # Archivos traceview de Playwright
-│   │   │   └── imagen/             # Capturas de pantalla
-│   │   ├── test_home.py               # Tests para la página de inicio
-│   │   ├── test_login.py              # Tests para la funcionalidad de login
-│   │   ├── test_registro.py           # Tests para la funcionalidad de registro
-│   │   └── conftest.py                # Fixtures y configuraciones de Pytest
+│   └── test/
+│       ├── archivos/               # Archivos de prueba (ej. para upload/download)
+│       │   ├── archivos_data_escritura/
+│       │   ├── archivos_data_fuente/
+│       │   ├── archivos_download/
+│       │   └── archivos_upload/
+│       ├── reportes/               # Directorio para almacenar evidencias de las pruebas
+│       │   ├── html/               # Informes HTML
+│       │   ├── video/              # Grabaciones de video de las ejecuciones
+│       │   ├── traceview/          # Archivos traceview de Playwright
+│       │   └── imagen/             # Capturas de pantalla
+│       ├── test_home.py               # Tests para la página de inicio
+│       ├── test_login.py              # Tests para la funcionalidad de login
+│       ├── test_registro.py           # Tests para la funcionalidad de registro
+│       └── conftest.py                # Fixtures y configuraciones de Pytest
 ├── .gitignore
 ├── pyproject.toml                 # Configuración de Pytest (opciones por defecto)
 ├── requirements.txt               # Dependencias del proyecto
